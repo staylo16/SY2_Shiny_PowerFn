@@ -22,9 +22,9 @@ ui <- fluidPage(
 # helpText("This app illustrates the principal of repeated sampling and unbiaseness of the sample mean estimator, 
 #                   \\(\\bar{X}\\), for the population expectation parameter \\(\\mu\\). In reality, we can only ever have a 
 #                   single sample from the population (represented in green) and the calculated sample mean estimate, 
-#                   \\(\\bar{x}\\). However, the single sample is only one of many possible datasets obtained from the population 
+#                   \\(\\bar{x}\\). However, the single sample is only one of many possible data sets obtained from the population 
 #                   distribution, each with their own sample mean estimate. We can examine the sampling distribution for 
-#                   \\(\\bar{X}\\) through simulations for different population distributioins and sample sizes, and assess how 
+#                   \\(\\bar{X}\\) through simulations for different population distributions and sample sizes, and assess how 
 #                   good the sample mean is for inferring \\(\\mu\\)."),
  
  # Application title
@@ -33,9 +33,9 @@ ui <- fluidPage(
  h4(withMathJax("This app illustrates the principal of repeated sampling and unbiaseness of the sample mean estimator, 
                    \\(\\bar{X}\\), for the population expectation parameter \\(\\mu\\). In reality, we can only ever have a 
                    single sample from the population (represented in green) and the calculated sample mean estimate, 
-                   \\(\\bar{x}\\). However, the single sample is only one of many possible datasets obtained from the population 
+                   \\(\\bar{x}\\). However, the single sample is only one of many possible data sets obtained from the population 
                    distribution, each with their own sample mean estimate. We can examine the sampling distribution for 
-                   \\(\\bar{X}\\) through simulations for different population distributioins and sample sizes, and assess how 
+                   \\(\\bar{X}\\) through simulations for different population distributions and sample sizes, and assess how 
                    good the sample mean is for inferring \\(\\mu\\).")),
 
  # Sidebar with a slider input for number of bins 
