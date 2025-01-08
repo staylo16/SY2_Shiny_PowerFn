@@ -1,8 +1,8 @@
 import { Complex, NamedEntries, NamedObject, WebRDataRaw, WebRDataScalar } from './robj';
-import { WebRData, WebRDataAtomic, RPtr, RType, RCtor } from './robj';
+import { WebRData, WebRDataAtomic, RPtr, RType, RTypeNumber } from './robj';
 import { WebRDataJs, WebRDataJsAtomic, WebRDataJsNode } from './robj';
 import { WebRDataJsNull, WebRDataJsString, WebRDataJsSymbol } from './robj';
-import { EvalROptions, ShelterID } from './webr-chan';
+import { ShelterID } from './webr-chan';
 export type RHandle = RObject | RPtr;
 export declare function handlePtr(x: RHandle): RPtr;
 export declare const shelters: Map<string, number[]>;
@@ -29,10 +29,8 @@ export declare class RObject extends RObjectBase {
     getPropertyValue(prop: keyof this): unknown;
     inspect(): void;
     isNull(): this is RNull;
-    isNa(): boolean;
     isUnbound(): boolean;
     attrs(): Nullable<RPairlist>;
-    class(): RCharacter;
     setNames(values: (string | null)[] | null): this;
     names(): (string | null)[] | null;
     includes(name: string): boolean | null;
@@ -85,17 +83,10 @@ export declare class RCall extends RObject {
     car(): RObject;
     cdr(): Nullable<RPairlist>;
     eval(): RObject;
-    capture(options?: EvalROptions): {
-        result: RObject;
-        output: RList;
-        images: ImageBitmap[];
-    };
-    deparse(): string;
 }
 export declare class RList extends RObject {
-    constructor(val: WebRData, names?: (string | null)[] | null);
+    constructor(val: WebRData);
     get length(): number;
-    isDataFrame(): boolean;
     toArray(options?: {
         depth: number;
     }): WebRData[];
@@ -104,7 +95,6 @@ export declare class RList extends RObject {
         allowEmptyKey?: boolean | undefined;
         depth?: number | undefined;
     }): NamedObject<WebRData>;
-    toD3(): NamedObject<WebRData>[];
     entries(options?: {
         depth: number;
     }): NamedEntries<WebRData>;
@@ -112,20 +102,8 @@ export declare class RList extends RObject {
         depth: number;
     }, depth?: number): WebRDataJsNode;
 }
-export declare class RDataFrame extends RList {
-    constructor(val: WebRData);
-    static fromObject(obj: WebRData): RDataFrame;
-    static fromD3(arr: {
-        [key: string]: WebRData;
-    }[]): RDataFrame;
-}
 export declare class RFunction extends RObject {
     exec(...args: (WebRDataRaw | RObject)[]): RObject;
-    capture(options?: EvalROptions, ...args: (WebRDataRaw | RObject)[]): {
-        result: RObject;
-        output: RList;
-        images: ImageBitmap[];
-    };
 }
 export declare class RString extends RObject {
     constructor(x: WebRDataScalar<string>);
@@ -153,7 +131,7 @@ declare abstract class RVectorAtomic<T extends atomicType> extends RObject {
     get length(): number;
     get(prop: number | string): this;
     subset(prop: number | string): this;
-    getDollar(): RObject;
+    getDollar(prop: string): RObject;
     detectMissing(): boolean[];
     abstract toTypedArray(): TypedArray;
     toArray(): (T | null)[];
@@ -209,7 +187,7 @@ export declare class RRaw extends RVectorAtomic<number> {
     toNumber(): number;
     toTypedArray(): Uint8Array;
 }
-export declare function getRWorkerClass(type: RType | RCtor): typeof RObject;
+export declare function getRWorkerClass(type: RTypeNumber): typeof RObject;
 /**
  * Test for an RWorker.RObject instance.
  *
@@ -221,22 +199,6 @@ export declare function getRWorkerClass(type: RType | RCtor): typeof RObject;
  * @return {boolean} True if the object is an instance of an RObject.
  */
 export declare function isRObject(value: any): value is RObject;
-/**
- * Test for an RWorker.RVectorAtomic instance.
- *
- * @private
- * @param {any} value The object to test.
- * @return {boolean} True if the object is an instance of an RVectorAtomic.
- */
-export declare function isRVectorAtomic(value: any): value is RVectorAtomic<atomicType>;
-/**
- * Test for an atomicType, including missing `null` values.
- *
- * @private
- * @param {any} value The object to test.
- * @return {boolean} True if the object is of type atomicType.
- */
-export declare function isAtomicType(value: any): value is atomicType | null;
 /**
  * A store for persistent R objects, initialised at R startup.
  */

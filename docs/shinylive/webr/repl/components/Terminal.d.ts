@@ -1,5 +1,4 @@
 import React from 'react';
-import './Terminal.css';
 import { TerminalInterface } from '../App';
 import { WebR } from '../../webR/webr-main';
 import 'xterm/css/xterm.css';
