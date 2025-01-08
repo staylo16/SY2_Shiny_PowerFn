@@ -1,258 +1,235 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
-#Published: https://uoe-maths.shinyapps.io/SY2-EstimatorTheory/
-
+# Forecasting Sandbox ----
+# This is an example for a Shinylive R app
+# The app provides a forecasting sandbox for the AirPassengers dataset
+# It supports 3 stats forecasting models - Linear Regression, ARIMA, and Holt-Winters
 
 library(shiny)
+data(AirPassengers)
 
-# Define UI for application that draws a histogram
+# UI ----
 ui <- fluidPage(
- 
-# title = "Sample Mean Estimator",
-# withMathJax(),
- 
-# helpText("Sample Mean Estimator, \\(\\bar{X} = \\frac{1}{n}\\sum_{i=1}^n X_i\\), for i.i.d. Samples From the Population Distribution.\n"),
-# helpText("This app illustrates the principal of repeated sampling and unbiaseness of the sample mean estimator, 
-#                   \\(\\bar{X}\\), for the population expectation parameter \\(\\mu\\). In reality, we can only ever have a 
-#                   single sample from the population (represented in green) and the calculated sample mean estimate, 
-#                   \\(\\bar{x}\\). However, the single sample is only one of many possible data sets obtained from the population 
-#                   distribution, each with their own sample mean estimate. We can examine the sampling distribution for 
-#                   \\(\\bar{X}\\) through simulations for different population distributions and sample sizes, and assess how 
-#                   good the sample mean is for inferring \\(\\mu\\)."),
- 
- # Application title
- titlePanel(withMathJax("Sample Mean Estimator, \\(\\bar{X} = \\frac{1}{n}\\sum_{i=1}^n X_i\\), for i.i.d. Samples From the Population Distribution.")),
- 
- h4(withMathJax("This app illustrates the principal of repeated sampling and unbiaseness of the sample mean estimator, 
-                   \\(\\bar{X}\\), for the population expectation parameter \\(\\mu\\). In reality, we can only ever have a 
-                   single sample from the population (represented in green) and the calculated sample mean estimate, 
-                   \\(\\bar{x}\\). However, the single sample is only one of many possible data sets obtained from the population 
-                   distribution, each with their own sample mean estimate. We can examine the sampling distribution for 
-                   \\(\\bar{X}\\) through simulations for different population distributions and sample sizes, and assess how 
-                   good the sample mean is for inferring \\(\\mu\\).")),
 
- # Sidebar with a slider input for number of bins 
- sidebarLayout(
-  sidebarPanel(
-   
-   
-   selectInput("Dist", "Population Distribution:", c("Normal, N(0,1)" = "N",
-                                                     "Binomial, Bin(10,1/3)" = "B",
-                                                     "Exponential, Exp(1)" = "E",
-                                                     "Uniform, U(0,1)" = "U")),
-   
-   selectInput("n", "Sample Size:", c("n=10" = "small",
-                                      "n=100" = "med",
-                                      "n=1000" = "large")),
-   
-   #selectInput("alpha", "Confidence Interval:", c("95%" = "0.05",
-   #                                   "90%" = "0.1",
-   #                                   "80%" = "0.2")),
-   
-   radioButtons("clt", "Draw the CLT Distribution?",
-                c("No" = "N","Yes" = "Y")),
-   
-   
-   actionButton("run", "Re-run"),
-   
-   h3("Key:"),
-   h4("Green - Available information."),
-   h4("Black - Typically unavailable."),
-   
-   width = 3
-   
-  ),
-  
-  
-  # Show a plot of the generated distribution
-  mainPanel(
-   plotOutput("Plots", height = "1000px")
+  # App title ----
+  titlePanel("Forecasting Sandbox"),
+  sidebarLayout(
+
+    sidebarPanel(width = 3,
+        selectInput(inputId = "model",
+                    label = "Select Model",
+                    choices = c("Linear Regression", "ARIMA", "Holt-Winters"),
+                    selected = "Linear Regression"),
+        # Linear Regression model arguments
+        conditionalPanel(condition = "input.model == 'Linear Regression'",
+                         checkboxGroupInput(inputId = "lm_args", 
+                         label = "Select Regression Features:", 
+                         choices = list("Trend" = 1, 
+                                        "Seasonality" = 2),
+                         selected = 1)),
+        # ARIMA model arguments
+        conditionalPanel(condition = "input.model == 'ARIMA'",
+                             h5("Order Parameters"),
+                              sliderInput(inputId = "p",
+                                          label = "p:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0),
+                            sliderInput(inputId = "d",
+                                          label = "d:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0),
+                            sliderInput(inputId = "q",
+                                          label = "q:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0),
+                            h5("Seasonal Parameters:"),
+                            sliderInput(inputId = "P",
+                                          label = "P:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0),
+                            sliderInput(inputId = "D",
+                                          label = "D:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0),
+                            sliderInput(inputId = "Q",
+                                          label = "Q:",
+                                          min = 0,
+                                          max = 5,
+                                          value = 0)
+        ),
+        # Holt Winters model arguments
+        conditionalPanel(condition = "input.model == 'Holt-Winters'",
+                         checkboxGroupInput(inputId = "hw_args", 
+                         label = "Select Holt-Winters Parameters:", 
+                         choices = list("Beta" = 2, 
+                                        "Gamma" = 3),
+                         selected = c(1, 2, 3)),
+                          selectInput(inputId = "hw_seasonal",
+                                      label = "Select Seasonal Type:",
+                                      choices = c("Additive", "Multiplicative"),
+                                      selected = "Additive")),
+        
+        checkboxInput(inputId = "log", 
+                    label = "Log Transformation",
+                    value = FALSE),
+      sliderInput(inputId = "h",
+                  label = "Forecasting Horizon:",
+                  min = 1,
+                  max = 60,
+                  value = 24)
+                #   actionButton(inputId = "update",
+                #                 label = "Update!")
+
+    ),
+
+    # Main panel for displaying outputs ----
+    mainPanel(width = 9,
+      # Forecast Plot ----
+     plotOutput(outputId = "fc_plot",
+                height = "400px")
+
+    )
   )
- )
 )
 
-# Define server logic required to draw a histogram
+# Define server logic required to draw a histogram ----
 server <- function(input, output) {
- r <- reactiveValues(seed = as.numeric(Sys.time()))
- 
- observeEvent(input$run, {
-  r$seed = as.numeric(Sys.time())
- })
- 
- output$Plots <- renderPlot({
-  set.seed(r$seed)
-  
-  CI <- "alpha" %in% names(input)
-  if(CI){
-   layout(rbind(1,c(2,2,3,3,4,4,5),6,7))
-  }else{
-   layout(rbind(1,c(2,2,3,3,4,4,5),6))
-  }
-  
-  ###Population plot
-  if(input$Dist == "N"){
-   x <- seq(-4,4,len=1000)
-   y <- dnorm(x)
-   ylim=c(-0.2,1)*max(y)
-   plot(x,y,type="l",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
-        ylim=ylim,cex.main=2)
-   polygon(x,y,density=10,col=1,border=1)
-   abline(h=0)
-   segments(0,0,0,.Machine$integer.max,col=1,lwd=2)
-   text(x = 0, y=0.5*ylim[1], label = expression(mu),cex=2)
-   text(-3,0.5*ylim[1],"-3",cex=2)
-   text(3,0.5*ylim[1],"3",cex=2)
-  }else if(input$Dist == "E"){
-   x <- seq(0,6,len=1000)
-   y <- dexp(x)
-   ylim=c(-0.2,1)*max(y)
-   plot(x,y,type="l",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
-        ylim=ylim,cex.main=2)
-   polygon(c(0,x,max(x)),c(0,y,0),density=10,col=1,border=1)
-   segments(0,0,0,.Machine$integer.max)
-   segments(0,0,.Machine$integer.max,0)
-   segments(1,0,1,.Machine$integer.max,col=1,lwd=2)
-   text(x = 1, y=0.5*ylim[1], label = expression(mu),cex=2)
-   text(0,0.5*ylim[1],"0",cex=2)
-   text(max(x),0.5*ylim[1],max(x),cex=2)
-  }else if(input$Dist == "B"){
-   x <- 0:10
-   y <- dbinom(x, 10, 1/3)
-   ylim=c(-0.2,1)*max(y)
-   plot(x,y,type="h",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
-        ylim=ylim,col=1,cex.main=2)
-   points(x,y,pch=16,col=2)
-   abline(h=0)
-   text(0,0.5*ylim[1],"0",cex=2)
-   text(10,0.5*ylim[1],"10",cex=2)
-   segments(10*1/3,0,10*1/3,.Machine$integer.max,col=1,lwd=2)
-   text(x = 10*1/3, y=0.5*ylim[1], label = expression(mu),cex=2)
-  }else if(input$Dist == "U"){
-   x <- seq(-0.5,1.5,len=1000)
-   y <- dunif(x)
-   ylim=c(-0.2,1)*max(y)
-   plot(x,y,type="l",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
-        ylim=ylim,cex.main=2)
-   polygon(x,y,density=10,col=1,border=1)
-   abline(h=0)
-   segments(0.5,0,0,.Machine$integer.max,col=1,lwd=2)
-   text(x = 0.5, y=0.5*ylim[1], label = expression(mu),cex=2)
-   text(0,0.5*ylim[1],"0",cex=2)
-   text(1,0.5*ylim[1],"1",cex=2)
-  }
-  
-  ##Sample plot
-  n <- switch(input$n,
-              "small" = 10, 
-              "med" = 100, 
-              "large" = 1000)
-  f <- switch(input$Dist,
-              "N" = function(n){rnorm(n)}, 
-              "B" = function(n){rbinom(n,size=10,prob=1/3)}, 
-              "E" = function(n){rexp(n)},
-              "U" = function(n){runif(n)})
-  ftrim <- function(f,n,xlim){
-   x <- f(n)
-   x <- x[x>=xlim[1] & x <= xlim[2]]
-   while(length(x)<n){
-    x <- c(x,f(n-length(x)))
-    x <- x[x>xlim[1] & x < xlim[2]]
-   }
-   return(x)
-  }
-  xlim <- switch(input$Dist,
-                 "N" = c(-4,4), 
-                 "B" = c(0,10), 
-                 "E" = c(0,6),
-                 "U" = c(0,1))
-  xbar_store <- NULL
-  
-  for(i in 1:3){
-   x <- ftrim(f,n,xlim)
-   xbar_store <- c(xbar_store,mean(x))
-   if(input$Dist=="B"){
-    h <- hist(x,plot=FALSE)
-    h$mids <- 0:10
-    h$breaks <- seq(-0.5,10.5,by=1)
-    h$counts <- as.numeric(table(c(x,0:10))-1)
-    h$density <- h$counts/sum(diff(h$breaks)*h$counts)
-   }else{
-    h <- hist(x,plot=FALSE)  
-   }
-   plot(h, main = paste0("Sample ",i),xlim=xlim,ylim=c(0,max(h$counts)*1.1),density=10,col=1+2*(i==1),xlab="",cex.main=2,cex.lab=1.5)
-   segments(mean(x),0,mean(x),.Machine$integer.max,lwd=2,col=1+2*(i==1))
-   text(x = mean(x)+0.04*diff(xlim), y=max(h$counts)*1.1, label = expression(bar(x)),cex = 2)
-  }
-  plot(-1:1,rep(0,3),pch=16,cex=2,xlab="",ylab="",frame=FALSE,xaxt="n",yaxt="n",xlim=c(-2,2))
-  
-  #Estimator
-  while(length(xbar_store) < 1000){
-   #x <- ftrim(f,n,xlim)
-   xbar_store <- c(xbar_store,mean(f(n)))
-  }
-  mu <- switch(input$Dist,
-               "N" = 0, 
-               "B" = 10*1/3, 
-               "E" = 1,
-               "U" = 0.5)
-  h <- hist(xbar_store,plot=FALSE)
-  xlim <- switch(input$Dist,
-                 "N" = 0+c(-4,4)/sqrt(10), 
-                 "B" = 10*1/3 + c(-4,4)*sqrt(2)/3, 
-                 "E" = 1+c(-4,4)/sqrt(10),
-                 "U" = 0.5+c(-4,4)/sqrt(120))
-  
-  plot(h, main = "Sampling Distribution", ylim=c(0,max(h$counts)*1.1),density=10,col=1,xlab="",xlim=xlim,cex.main=2,cex.lab=1.5)
-  segments(xbar_store[1],0,xbar_store[1],.Machine$integer.max,lwd=2,col=3)
-  segments(mu,0,mu,.Machine$integer.max,lwd=2,col=1)
-  if(mu>xbar_store[1]){shift <- -1}else{shift <- +1}
-  text(x = xbar_store[1]+shift*0.01*diff(xlim), y=max(h$counts)*1.1, label = expression(bar(x)),cex = 2)
-  text(x = mu-shift*0.01*diff(xlim), y=max(h$counts)*1.1, label = expression(mu),cex = 2)
-  
-  if(input$clt == "Y"){
-   a <- seq(xlim[1],xlim[2],len=1000)
-   s <- switch(input$Dist,
-               "N" = 1/sqrt(n), 
-               "B" = sqrt(mu*(10-mu)/(10*n)), 
-               "E" = mu/sqrt(n),
-               "U" = 1/sqrt(12*n))
-   scale <- h$counts[1]/h$density[1]
-   lines(a,dnorm(a,mu,s)*scale,lty=1,col=1,lwd=2)
-  }
-  
-  
-  ##CI
-  if(CI){
-   maxidx <- 40#length(xbar_store)
-   IDX <- 1:maxidx
-   se_store <- switch(input$Dist,
-                      "N" = rep(1/sqrt(n),length(xbar_store)), 
-                      "B" = sqrt(xbar_store*(10-xbar_store)/(10*n)), 
-                      "E" = xbar_store/sqrt(n),
-                      "U" = rep(1/sqrt(12*n),length(xbar_store)))
-   alpha <- as.numeric(input$alpha)
-   LOW <- xbar_store[IDX] - qnorm(1-alpha/2)*se_store[IDX]
-   UPP <- xbar_store[IDX] + qnorm(1-alpha/2)*se_store[IDX]
-   pch <- 1 + 15*as.numeric(mu > LOW & mu < UPP)
-   rng <- max(c(abs(LOW-mu),abs(UPP-mu)))
-   ylim <- mu+c(-1,1)*rng
-   plot(IDX,xbar_store[IDX],xlab="",ylab="",xaxt="n",ylim = ylim,
-        frame=FALSE,pch=pch,cex=3,col=c(3,rep(1,length(IDX)-1)), 
-        main = "Confidence Intervals",cex.main=2)
-   segments(IDX,LOW,IDX,UPP,col=c(3,rep(1,length(IDX)-1)))
-   abline(h=mu, col = 1)
-   text(0,mu+0.1*rng,expression(mu),cex=2)
-  }  
- })
- 
+# Load the dataset a reactive object
+    d <- reactiveValues(df = data.frame(input = as.numeric(AirPassengers), 
+                 index = seq.Date(from = as.Date("1949-01-01"),
+                                  by = "month",
+                                  length.out = length(AirPassengers))),
+                        air = AirPassengers)
+
+# Log transformation 
+    observeEvent(input$log,{
+        if(input$log){
+            d$df <- data.frame(input = log(as.numeric(AirPassengers)), 
+                 index = seq.Date(from = as.Date("1949-01-01"),
+                                  by = "month",
+                                  length.out = length(AirPassengers)))
+            
+            d$air <- log(AirPassengers)
+        } else {
+            d$df <- data.frame(input = as.numeric(AirPassengers), 
+                 index = seq.Date(from = as.Date("1949-01-01"),
+                                  by = "month",
+                                  length.out = length(AirPassengers)))
+            
+            d$air <- AirPassengers
+        }
+    })
+
+# The forecasting models execute under the plot render
+  output$fc_plot <- renderPlot({
+
+    # if adding a prediction intervals level argument set over here
+    pi <- 0.95
+
+    # Holt-Winters model
+    if(input$model == "Holt-Winters"){
+       a <- b <- c <- NULL
+
+       if(!"2" %in% input$hw_args){
+        b <- FALSE
+       }
+
+       if(!"3" %in% input$hw_args){
+        c <- FALSE
+       }
+
+        md <- HoltWinters(d$air, 
+                          seasonal = ifelse(input$hw_seasonal == "Additive", "additive", "multiplicative"),
+                          beta = b,
+                          gamma = c
+                          )
+        fc <- predict(md, n.ahead = input$h, prediction.interval = TRUE) |>
+                as.data.frame()
+        fc$index <- seq.Date(from = as.Date("1961-01-01"),
+                                  by = "month",
+                                  length.out = input$h)
+    # ARIMA model
+    } else if(input$model == "ARIMA"){
+        
+        md <- arima(d$air,
+                    order = c(input$p, input$d, input$q),
+                    seasonal = list(order = c(input$P, input$D, input$Q))
+                          )
+        fc <- predict(md, n.ahead = input$h, prediction.interval = TRUE) |>
+                as.data.frame() 
+        names(fc) <- c("fit", "se")
+
+        fc$index <- seq.Date(from = as.Date("1961-01-01"),
+                                  by = "month",
+                                  length.out = input$h)
+
+        fc$upr <- fc$fit + 1.96 * fc$se
+        fc$lwr <- fc$fit - 1.96 * fc$se
+    # Linear Regression model
+    } else if(input$model == "Linear Regression"){
+
+        d_lm <- d$df
+
+        d_fc <- data.frame(index = seq.Date(from = as.Date("1961-01-01"),
+                                  by = "month",
+                                  length.out = input$h))
+
+        if("1" %in% input$lm_args){
+            d_lm$trend <- 1:nrow(d_lm)
+            d_fc$trend <- (max(d_lm$trend) + 1):(max(d_lm$trend) + input$h)
+        }
+
+        if("2" %in% input$lm_args){
+            d_lm$season <- as.factor(months((d_lm$index)))
+            d_fc$season <- factor(months((d_fc$index)), levels = levels(d_lm$season))
+        }
+
+        md <- lm(input ~ ., data = d_lm[, - which(names(d_lm) == "index")])
+                          
+        fc <- predict(md, n.ahead = input$h, interval = "prediction",
+        level = pi, newdata = d_fc) |>
+                as.data.frame() 
+        
+
+        fc$index <- seq.Date(from = as.Date("1961-01-01"),
+                                  by = "month",
+                                  length.out = input$h)
+
+    }
+
+# Setting the plot
+    at_x <- pretty(seq.Date(from = min(d$df$index),
+                     to = max(fc$index),
+                     by = "month"))
+
+    at_y <- c(pretty(c(d$df$input, fc$upr)), 1200)
+
+    plot(x = d$df$index, y = d$df$input,
+        col = "#1f77b4",
+        type = "l",
+        frame.plot = FALSE,
+        axes = FALSE,
+        panel.first = abline(h = at_y, col = "grey80"),
+        main = "AirPassengers Forecast",
+        xlim = c(min(d$df$index), max(fc$index)),
+        ylim = c(min(c(min(d$df$input), min(fc$lwr))), max(c(max(fc$upr), max(d$df$input)))),
+        xlab = paste("Model:", input$model, sep = " "),
+        ylab = "Num. of Passengers (in Thousands)")
+    mtext(side =1, text = format(at_x, format = "%Y-%M"), at = at_x,
+      col = "grey20", line = 1, cex = 0.8)
+
+mtext(side =2, text = format(at_y, scientific = FALSE), at = at_y,
+      col = "grey20", line = 1, cex = 0.8)
+    lines(x = fc$index, y = fc$fit, col = '#1f77b4', lty = 2, lwd = 2)
+  lines(x = fc$index, y = fc$upr, col = 'blue', lty = 2, lwd = 2)
+  lines(x = fc$index, y = fc$lwr, col = 'blue', lty = 2, lwd = 2)
+
+    })
+
 }
 
-# Run the application 
+# Create Shiny app ----
 shinyApp(ui = ui, server = server)
