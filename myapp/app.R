@@ -251,7 +251,7 @@ server <- function(input, output) {
                         "U" = 1/sqrt(12*n))
             scale <- h$counts[1]/h$density[1]
             lines(a,dnorm(a,mu,s)*scale,lty=1,col=1,lwd=2)
-        }
+        } 
         
         
         ##CI
