@@ -31,10 +31,13 @@ ui <- fluidPage(
         sidebarPanel(
             
             
-            selectInput("Dist", "Population Distribution:", c("Normal, N(0,1)" = "N",
-                                                  "Binomial, Bin(10,1/3)" = "B",
-                                                  "Exponential, Exp(1)" = "E",
-                                                  "Uniform, U(0,1)" = "U")),
+            selectInput("Dist", "Population Distribution:", 
+                                   c("Normal, N(0,1)" = "N",
+                                     "Binomial, Bin(10,1/3)" = "B",
+                                     "Bernulli, Bern(1/2)" = "Bern_half",
+                                     "Bernulli, Bern(1/50)" = "Bern_small",
+                                     "Exponential, Exp(1)" = "E",
+                                     "Uniform, U(0,1)" = "U")),
             
             selectInput("n", "Sample Size:", c("n=10" = "small",
                                               "n=100" = "med",
@@ -134,6 +137,30 @@ server <- function(input, output) {
             text(x = 0.5, y=0.5*ylim[1], label = expression(mu),cex=2)
             text(0,0.5*ylim[1],"0",cex=2)
             text(1,0.5*ylim[1],"1",cex=2)
+        }else if(input$Dist == "Bern_half"){
+          x <- 0:1
+          y <- dbinom(x, 1, 1/2)
+          ylim=c(-0.2,1)
+          plot(x,y,type="h",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
+            ylim=ylim,xlim=range(x) + c(-0.5, 0.5), col=1,cex.main=2)
+          points(x, y, pch=16,col=2)
+          abline(h=0)
+          text(0,0.5*ylim[1],"0",cex=2)
+          text(1,0.5*ylim[1],"1",cex=2)
+          segments(1/2,0,1/2,.Machine$integer.max,col=1,lwd=2)
+          text(x = 1/2, y=0.5*ylim[1], label = expression(mu),cex=2)
+        }else if(input$Dist == "Bern_small"){
+         x <- 0:1
+         y <- dbinom(x, 1, 1/50)
+         ylim=c(-0.2,1)
+         plot(x,y,type="h",xaxt="n",yaxt="n",frame=FALSE,xlab="",ylab="",main="Population Distribution",
+              ylim=ylim,xlim=range(x) + c(-0.5, 0.5), col=1,cex.main=2)
+         points(x, y, pch=16,col=2)
+         abline(h=0)
+         text(0,0.5*ylim[1],"0",cex=2)
+         text(1,0.5*ylim[1],"1",cex=2)
+         segments(1/50,0,1/50,.Machine$integer.max,col=1,lwd=2)
+         text(x = 1/50, y=0.5*ylim[1], label = expression(mu),cex=2)
         }
         
         ##Sample plot
@@ -144,6 +171,8 @@ server <- function(input, output) {
         f <- switch(input$Dist,
                     "N" = function(n){rnorm(n)}, 
                     "B" = function(n){rbinom(n,size=10,prob=1/3)}, 
+                    "Bern_half" = function(n){rbinom(n,size=1,prob=1/2)}, 
+                    "Bern_small" = function(n){rbinom(n,size=1,prob=1/50)}, 
                     "E" = function(n){rexp(n)},
                     "U" = function(n){runif(n)})
         ftrim <- function(f,n,xlim){
@@ -158,6 +187,8 @@ server <- function(input, output) {
         xlim <- switch(input$Dist,
                        "N" = c(-4,4), 
                        "B" = c(0,10), 
+                       "Bern_half" = c(-0.5,1.5), 
+                       "Bern_small" = c(-0.5,1.5), 
                        "E" = c(0,6),
                        "U" = c(0,1))
         xbar_store <- NULL
@@ -165,11 +196,12 @@ server <- function(input, output) {
         for(i in 1:3){
             x <- ftrim(f,n,xlim)
             xbar_store <- c(xbar_store,mean(x))
-            if(input$Dist=="B"){
+            if(input$Dist%in%c("B","Bern_half","Bern_small")){
+              if(input$Dist == "B"){ breaks_upper <- 10 }else{ breaks_upper <- 1 }
               h <- hist(x,plot=FALSE)
-              h$mids <- 0:10
-              h$breaks <- seq(-0.5,10.5,by=1)
-              h$counts <- as.numeric(table(c(x,0:10))-1)
+              h$mids <- 0:breaks_upper
+              h$breaks <- seq(-0.5,breaks_upper + 0.5,by=1)
+              h$counts <- as.numeric(table(c(x,0:breaks_upper))-1)
               h$density <- h$counts/sum(diff(h$breaks)*h$counts)
             }else{
               h <- hist(x,plot=FALSE)  
@@ -188,12 +220,16 @@ server <- function(input, output) {
         mu <- switch(input$Dist,
                      "N" = 0, 
                      "B" = 10*1/3, 
+                     "Bern_half" = 1/2, 
+                     "Bern_small" = 1/50, 
                      "E" = 1,
                      "U" = 0.5)
         h <- hist(xbar_store,plot=FALSE)
         xlim <- switch(input$Dist,
                        "N" = 0+c(-4,4)/sqrt(10), 
                        "B" = 10*1/3 + c(-4,4)*sqrt(2)/3, 
+                       "Bern_half" = 1/2 + c(-4,4)*sqrt(0.5*0.5/10),
+                       "Bern_small" = 1/50 + c(-4,4)*sqrt((1/50 * (1 - 1/50))/10), 
                        "E" = 1+c(-4,4)/sqrt(10),
                        "U" = 0.5+c(-4,4)/sqrt(120))
         
@@ -209,6 +245,8 @@ server <- function(input, output) {
             s <- switch(input$Dist,
                         "N" = 1/sqrt(n), 
                         "B" = sqrt(mu*(10-mu)/(10*n)), 
+                        "Bern_half" = sqrt(mu*(1-mu)/(n)), 
+                        "Bern_small" = sqrt(mu*(1-mu)/(n)), 
                         "E" = mu/sqrt(n),
                         "U" = 1/sqrt(12*n))
             scale <- h$counts[1]/h$density[1]
@@ -223,6 +261,8 @@ server <- function(input, output) {
           se_store <- switch(input$Dist,
                       "N" = rep(1/sqrt(n),length(xbar_store)), 
                       "B" = sqrt(xbar_store*(10-xbar_store)/(10*n)), 
+                      "Bern_half" = sqrt(xbar_store*(1-xbar_store)/(n)), 
+                      "Bern_small" = sqrt(xbar_store*(1-xbar_store)/(n)), 
                       "E" = xbar_store/sqrt(n),
                       "U" = rep(1/sqrt(12*n),length(xbar_store)))
           alpha <- as.numeric(input$alpha)
